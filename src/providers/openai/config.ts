@@ -1,6 +1,16 @@
 import fetch from "node-fetch";
 import { IConfig, IModel } from "../types";
-import { dropdownDataByName } from "../../raycast-utils";
+
+const fallbackModels: IModel[] = [
+  "gpt-4o",
+  "gpt-4o-mini",
+  "gpt-4.1",
+  "gpt-4.1-mini",
+  "gpt-4.1-nano",
+  "o4-mini",
+  "o3",
+  "o3-mini",
+].map((id) => ({ name: id, id }));
 
 const config: IConfig = {
   requireModel: true,
@@ -11,14 +21,7 @@ const config: IConfig = {
   supportCustomModel: true,
   /* eslint-disable @typescript-eslint/no-unused-vars */
   async listModels(apikey: string | undefined, entrypoint: string | undefined): Promise<IModel[]> {
-    const predefine = dropdownDataByName("apiModel");
-    // map {title: string, value:string} to {name:string, id: string}
-    const fallbackModels: IModel[] =
-      predefine?.map((model) => ({
-        name: model.title,
-        id: model.value,
-      })) || [];
-    let result = fallbackModels;
+    let result = [...fallbackModels];
     if (entrypoint && entrypoint !== "") {
       const url = entrypoint.replace("/chat/completions", "/models");
 
@@ -38,7 +41,12 @@ const config: IConfig = {
         // check gpt inside the model list
         result = data.data
           .filter((model: { id: string }) => {
-            return model.id.includes("gpt") || model.id.startsWith("o1") || model.id.startsWith("o3") || model.id.startsWith("o4");
+            return (
+              model.id.includes("gpt") ||
+              model.id.startsWith("o1") ||
+              model.id.startsWith("o3") ||
+              model.id.startsWith("o4")
+            );
           })
           .map((model: { id: string }) => ({
             name: model.id,

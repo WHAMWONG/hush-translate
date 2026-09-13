@@ -5,6 +5,7 @@ import { IConfig, IModel } from "../providers/types";
 
 import openaiConfig from "../providers/openai/config";
 import groqConfig from "../providers/groq/config";
+import geminiConfig from "../providers/gemini/config";
 import { Record, ProvidersHook } from "../hooks/useProvider";
 
 export interface ProviderFormProps {
@@ -17,6 +18,7 @@ export interface ProviderFormProps {
 const providers: { value: string; title: string; config: IConfig }[] = [
   { value: "groq", title: "Groq", config: groqConfig },
   { value: "openai", title: "OpenAI", config: openaiConfig },
+  { value: "gemini", title: "Gemini", config: geminiConfig },
 ];
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -240,7 +242,7 @@ export const ProviderForm = (props: ProviderFormProps) => {
               key={provider.value}
               value={provider.value}
               title={provider.title}
-              icon={{ source: `ic_${provider.value}.png` }}
+              icon={provider.value === "gemini" ? Icon.Stars : { source: `ic_${provider.value}.png` }}
             />
           ))}
         </Form.Dropdown>

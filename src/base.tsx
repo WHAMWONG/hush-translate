@@ -16,9 +16,8 @@ import { useHistory } from "./hooks/useHistory";
 import capitalize from "capitalize";
 import { TranslateMode } from "./providers/types";
 import { ProvidersHook, useProviders } from "./hooks/useProvider";
-import { createProvider } from "./providers";
+import { createProvider, PROVIDER_CONFIGS } from "./providers";
 import { Provider } from "./providers/base";
-import groqConfig from "./providers/groq/config";
 
 export default function getBase(
   props: LaunchProps,
@@ -75,14 +74,14 @@ export default function getBase(
 
   const {
     provider: providerName,
-    entrypoint,
     apikey,
-    apiModel,
+    model,
+    customEntrypoint,
   } = getPreferenceValues<{
-    entrypoint: string;
-    apikey: string;
-    apiModel: string;
     provider: string;
+    apikey: string;
+    model?: string;
+    customEntrypoint?: string;
   }>();
 
   let provider: Provider | undefined;
@@ -100,19 +99,14 @@ export default function getBase(
         });
       }
     }
-  } else if (providerName === "groq") {
-    provider = createProvider(providerName, {
-      name: providerName,
-      entrypoint: groqConfig.defaultEntrypoint,
-      apikey,
-      apiModel: groqConfig.defaultModel?.id,
-    });
   } else {
+    // empty Model / Custom Entrypoint fall back to the selected provider's defaults
+    const config = PROVIDER_CONFIGS[providerName];
     provider = createProvider(providerName, {
       name: providerName,
-      entrypoint,
+      entrypoint: (config?.supportCustomEntrypoint && customEntrypoint?.trim()) || config?.defaultEntrypoint || "",
       apikey,
-      apiModel,
+      apiModel: model?.trim() || config?.defaultModel?.id,
     });
   }
   if (provider) {

@@ -36,7 +36,7 @@ export default class extends Provider {
       body: JSON.stringify(body),
       headers,
     } as any;
-    const source = fetchSSE(`${this.entrypoint}`, options);
+    const source = await fetchSSE(`${this.entrypoint}`, options);
 
     yield* compose(source, new SSETransform(), messageParser);
   }
@@ -115,19 +115,19 @@ export default class extends Provider {
             if (!choices || choices.length === 0) {
               console.debug({ error: "No result" });
             } else {
-              const { finish_reason: finishReason } = choices[0];
-              if (finishReason) {
-                yield finishReason;
-              } else {
-                let targetTxt = "";
-                const { content = "", role } = choices[0].delta;
-
-                targetTxt = content ? content : "";
+              const { finish_reason: finishReason, delta } = choices[0];
+              // some providers (e.g. Gemini) send the last piece of text in the same chunk as finish_reason
+              const { content = "", role } = delta || {};
+              if (content || !finishReason) {
+                let targetTxt = content ? content : "";
 
                 if (quoteProcessor) {
                   targetTxt = quoteProcessor.processText(targetTxt);
                 }
                 yield { content: targetTxt, role, isWordMode };
+              }
+              if (finishReason) {
+                yield finishReason;
               }
             }
           } catch (error) {

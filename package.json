@@ -268,6 +268,10 @@
           "title": "OpenAI"
         },
         {
+          "value": "gemini",
+          "title": "Gemini"
+        },
+        {
           "value": "custom",
           "title": "Custom..."
         }
@@ -282,71 +286,20 @@
       "required": true
     },
     {
-      "name": "entrypoint",
-      "label": "API Entrypoint",
-      "description": "Enter your provider entrypoint, If your provider does not require an entrypoint, it will be ignored.",
+      "name": "model",
       "type": "textfield",
-      "title": "API Entrypoint",
-      "default": "https://api.groq.com/openai/v1/chat/completions",
-      "required": true
+      "required": false,
+      "title": "Model",
+      "placeholder": "Provider default",
+      "description": "Optional. Leave empty to use the provider's default: Groq → llama-3.3-70b-versatile, OpenAI → gpt-4o-mini, Gemini → gemini-3.5-flash-lite. To pick from a live model list, set Provider to \"Custom...\" and use Setup Providers."
     },
     {
-      "name": "apiModel",
-      "type": "dropdown",
+      "name": "customEntrypoint",
+      "type": "textfield",
       "required": false,
-      "title": "API Model",
-      "default": "gpt-4o-mini",
-      "description": "Choose an OpenAI API model, which is only available when using the OpenAI provider",
-      "data": [
-        {
-          "title": "gpt-4o",
-          "value": "gpt-4o"
-        },
-        {
-          "title": "gpt-4o-mini",
-          "value": "gpt-4o-mini"
-        },
-        {
-          "title": "gpt-4.1",
-          "value": "gpt-4.1"
-        },
-        {
-          "title": "gpt-4.1-mini",
-          "value": "gpt-4.1-mini"
-        },
-        {
-          "title": "gpt-4.1-nano",
-          "value": "gpt-4.1-nano"
-        },
-        {
-          "title": "o4-mini",
-          "value": "o4-mini"
-        },
-        {
-          "title": "o3",
-          "value": "o3"
-        },
-        {
-          "title": "o3-mini",
-          "value": "o3-mini"
-        },
-        {
-          "title": "o1",
-          "value": "o1"
-        },
-        {
-          "title": "o1-mini",
-          "value": "o1-mini"
-        },
-        {
-          "title": "chatgpt-4o-latest",
-          "value": "chatgpt-4o-latest"
-        },
-        {
-          "title": "gpt-4-turbo",
-          "value": "gpt-4-turbo"
-        }
-      ]
+      "title": "Custom Entrypoint",
+      "placeholder": "https://api.openai.com/v1/chat/completions",
+      "description": "Optional, OpenAI only: point to an OpenAI-compatible endpoint. Groq and Gemini always use their official endpoints."
     },
     {
       "name": "toLang",

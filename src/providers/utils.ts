@@ -3,7 +3,9 @@ import fetch, { RequestInit } from "node-fetch";
 import { Transform, TransformCallback, TransformOptions } from "stream";
 
 export const DEFAULT_TIMEOUT = 60 * 1000;
-export async function* fetchSSE(input: string, options: RequestInit) {
+// Resolves once the response headers arrive, so HTTP errors are thrown here rather than
+// inside stream.compose(), which silently swallows errors from its first stage.
+export async function fetchSSE(input: string, options: RequestInit) {
   const { signal: originSignal, ...fetchOptions } = options;
   const timeout = DEFAULT_TIMEOUT;
   const ctrl = new AbortController();
@@ -20,13 +22,19 @@ export async function* fetchSSE(input: string, options: RequestInit) {
     clearTimeout(timerId);
 
     if (resp.status !== 200) {
-      const errorBody = await resp.json();
+      const errorText = await resp.text();
+      let errorBody;
+      try {
+        errorBody = JSON.parse(errorText);
+      } catch {
+        errorBody = new Error(`HTTP ${resp.status}: ${errorText || resp.statusText}`);
+      }
       throw errorBody;
     }
-    const rs = resp.body;
-    if (rs) {
-      yield* rs;
+    if (!resp.body) {
+      throw new Error("Empty response body");
     }
+    return resp.body;
   } catch (error) {
     console.debug(error);
     if (ctrl.signal.aborted) {
@@ -49,7 +57,8 @@ export class SSETransform extends Transform {
   }
 
   _transform(chunk: Buffer, encoding: BufferEncoding, next: TransformCallback) {
-    this.parser.feed(this.decoder.decode(chunk as unknown as ArrayBuffer));
+    // stream: true keeps multi-byte UTF-8 characters that are split across chunks intact
+    this.parser.feed(this.decoder.decode(chunk as unknown as ArrayBuffer, { stream: true }));
     next();
   }
 }
