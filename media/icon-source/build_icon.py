@@ -1,5 +1,5 @@
 import math, sys
-# Usage: python3 assets/source/build_icon.py assets/source/extension_icon.svg
+# Usage: python3 media/icon-source/build_icon.py media/icon-source/extension_icon.svg
 # then rasterise the SVG to assets/extension_icon.png at 512x512.
 # Hush Translate icon: a squircle tile in sky blue, with the smiling bubble and word card as Liquid Glass.
 def squircle(size, inset=0, n=5.0, steps=256):

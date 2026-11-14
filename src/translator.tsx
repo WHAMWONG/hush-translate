@@ -313,7 +313,9 @@ export function Translator({ source, text: launchText, image: launchImage }: Tra
           id={JOB_ID}
           icon={sourceIcon(job.source, job.image)}
           title={singleLine(job.original)}
-          detail={<List.Item.Detail markdown={detailMarkdown(job)} />}
+          detail={
+            <List.Item.Detail markdown={detailMarkdown({ ...job, translation: job.translation || "_Translating…_" })} />
+          }
           actions={
             <ActionPanel>
               <Action title="Stop Translating" icon={Icon.Stop} onAction={() => controller.current?.abort()} />

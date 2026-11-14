@@ -1,11 +1,6 @@
 import { environment } from "@raycast/api";
-import { execFile, spawn } from "child_process";
-import { access, chmod, constants } from "fs/promises";
 import path from "path";
-import { createInterface } from "readline";
-
-/** The Swift helper in `Sources/translator`: Apple Intelligence, Vision OCR and the pasteboard. */
-const binary = path.join(environment.assetsPath, "translator");
+import { availability, plan, readClipboard as readPasteboard, recognizeImage, translateChunk } from "swift:../swift";
 
 /** Where captured screenshots and clipboard images are kept while history refers to them. */
 export const imageDirectory = path.join(environment.supportPath, "images");
@@ -40,39 +35,34 @@ export class EngineError extends Error {
   }
 }
 
-let executable: Promise<void> | undefined;
-
-/** Bundling can drop the executable bit from files in `assets`. */
-function ensureExecutable() {
-  executable ??= access(binary, constants.X_OK).catch(() => chmod(binary, 0o755));
-  return executable;
+/** Swift failures arrive as "code: message"; anything else keeps its own text. */
+function engineError(error: unknown): EngineError {
+  const text = (error instanceof Error ? error.message : String(error)).trim();
+  const match = /^([A-Za-z]+): (.+)$/s.exec(text);
+  return match ? new EngineError(match[1], match[2]) : new EngineError("failed", text);
 }
 
-function parseLine(line: string) {
-  const message = JSON.parse(line);
-  if (message.type === "error") throw new EngineError(message.code, message.message);
-  return message;
+async function call<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    throw engineError(error);
+  }
 }
 
-/** Runs a subcommand that answers with a single JSON line. */
-async function run<T>(args: string[]): Promise<T> {
-  await ensureExecutable();
-  return new Promise<T>((resolve, reject) => {
-    execFile(binary, args, { maxBuffer: 16 * 1024 * 1024 }, (error, stdout) => {
-      try {
-        const line = stdout.trim().split("\n").pop();
-        if (!line) throw error ?? new EngineError("failed", "The translator did not answer.");
-        resolve(parseLine(line));
-      } catch (failure) {
-        reject(failure);
-      }
-    });
-  });
+export async function getStatus(): Promise<Status> {
+  const status = await call(() => availability());
+  return { available: status.available, reason: (status.reason ?? undefined) as UnavailableReason | undefined };
 }
 
-export const getStatus = () => run<Status>(["status"]);
-export const readClipboard = () => run<Capture>(["clipboard", "--out", imageDirectory]);
-export const recognizeText = (image: string) => run<Capture>(["ocr", "--file", image]);
+const asCapture = (capture: { kind: string; text?: string | null; image?: string | null }): Capture => ({
+  kind: capture.kind as Capture["kind"],
+  text: capture.text ?? undefined,
+  image: capture.image ?? undefined,
+});
+
+export const readClipboard = async () => asCapture(await call(() => readPasteboard(imageDirectory)));
+export const recognizeText = async (image: string) => asCapture(await call(() => recognizeImage(image)));
 
 interface TranslateOptions {
   /** Preferred target language. */
@@ -84,42 +74,20 @@ interface TranslateOptions {
   onText?: (text: string) => void;
 }
 
-/** Translates `text`, reporting the growing result as the model writes it. */
+/**
+ * Translates `text` piece by piece, reporting the growing result after each piece.
+ * Aborting stops before the next piece; a piece already running finishes and is dropped.
+ */
 export async function translate(text: string, options: TranslateOptions): Promise<Translation> {
-  await ensureExecutable();
-  const args = ["translate", "--to", options.to, ...(options.alt ? ["--alt", options.alt] : [])];
-  const child = spawn(binary, args, { signal: options.signal, stdio: ["pipe", "pipe", "ignore"] });
+  const { from, to, chunks } = await call(() => plan(text, options.to, options.alt ?? null));
+  options.onStart?.(from, to);
 
-  return new Promise<Translation>((resolve, reject) => {
-    const result: Translation = { from: "", to: options.to, text: "" };
-    let finished = false;
-    let failure: unknown;
-
-    createInterface({ input: child.stdout }).on("line", (line) => {
-      try {
-        const message = parseLine(line);
-        if (message.type === "start") {
-          result.from = message.from;
-          result.to = message.to;
-          options.onStart?.(message.from, message.to);
-        } else if (message.type === "text") {
-          options.onText?.(message.text);
-        } else if (message.type === "done") {
-          result.text = message.text;
-          finished = true;
-        }
-      } catch (error) {
-        failure ??= error;
-      }
-    });
-
-    child.on("error", reject);
-    child.on("close", () => {
-      if (failure) reject(failure);
-      else if (finished) resolve(result);
-      else reject(new EngineError("failed", "The translation stopped unexpectedly."));
-    });
-    child.stdin.on("error", () => undefined);
-    child.stdin.end(text);
-  });
+  let done = "";
+  for (const chunk of chunks) {
+    if (options.signal?.aborted) throw new EngineError("aborted", "The translation was stopped.");
+    done += await call(() => translateChunk(chunk, to));
+    if (options.signal?.aborted) throw new EngineError("aborted", "The translation was stopped.");
+    options.onText?.(done);
+  }
+  return { from, to, text: done.trim() };
 }

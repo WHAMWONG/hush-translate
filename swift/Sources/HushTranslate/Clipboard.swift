@@ -1,10 +1,27 @@
 import AppKit
 import Foundation
 import UniformTypeIdentifiers
+import RaycastSwiftMacros
+
+/// Text taken from the clipboard or read out of an image.
+struct Capture: Encodable {
+  /// "text", "image" or "empty".
+  let kind: String
+  var text: String?
+  var image: String?
+}
 
 /// Reads what is on the clipboard: plain text as it is, an image through OCR.
 /// The image is saved as a PNG in `imageDirectory` so the result can show it.
-func readClipboard(imageDirectory: URL) throws -> [String: Any] {
+@raycast func readClipboard(imageDirectory: String) throws -> Capture {
+  do {
+    return try read(into: URL(fileURLWithPath: imageDirectory, isDirectory: true))
+  } catch {
+    throw Failure(code: "clipboard", message: error.localizedDescription)
+  }
+}
+
+private func read(into imageDirectory: URL) throws -> Capture {
   let pasteboard = NSPasteboard.general
   let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
@@ -18,15 +35,15 @@ func readClipboard(imageDirectory: URL) throws -> [String: Any] {
   // "Copy Image" puts the image's address next to it; the image wins.
   let hasImage = pasteboard.canReadObject(forClasses: [NSImage.self], options: nil)
   if !text.isEmpty, !(hasImage && looksLikeURL(text)) {
-    return ["kind": "text", "text": text]
+    return Capture(kind: "text", text: text)
   }
   if hasImage, let image = NSImage(pasteboard: pasteboard) {
     return try recognize(image, savingTo: imageDirectory)
   }
-  return ["kind": "empty"]
+  return Capture(kind: "empty")
 }
 
-private func recognize(_ image: NSImage, savingTo directory: URL) throws -> [String: Any] {
+private func recognize(_ image: NSImage, savingTo directory: URL) throws -> Capture {
   guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
     let png = NSBitmapImageRep(cgImage: cgImage).representation(using: .png, properties: [:])
   else {
@@ -35,7 +52,7 @@ private func recognize(_ image: NSImage, savingTo directory: URL) throws -> [Str
   try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
   let file = directory.appendingPathComponent("\(UUID().uuidString).png")
   try png.write(to: file)
-  return ["kind": "image", "text": try recognizeText(at: file), "image": file.path]
+  return Capture(kind: "image", text: try recognizeText(at: file), image: file.path)
 }
 
 private func isImageFile(_ url: URL) -> Bool {

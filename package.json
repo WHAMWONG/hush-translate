@@ -210,7 +210,6 @@
   },
   "scripts": {
     "build": "ray build -e dist",
-    "build-swift": "swift build -c release --arch arm64 && cp \"$(swift build -c release --arch arm64 --show-bin-path)/translator\" assets/translator",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",

@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Vision
+import RaycastSwiftMacros
 
 struct OCRError: LocalizedError {
   let errorDescription: String?
@@ -13,6 +14,15 @@ private struct Line {
   var maxX: CGFloat
   var minY: CGFloat
   var height: CGFloat
+}
+
+/// Reads the text in an image file, for a screenshot.
+@raycast func recognizeImage(path: String) throws -> Capture {
+  do {
+    return Capture(kind: "image", text: try recognizeText(at: URL(fileURLWithPath: path)), image: path)
+  } catch {
+    throw Failure(code: "ocr", message: error.localizedDescription)
+  }
 }
 
 /// Recognises the text in an image and reflows it into paragraphs.
