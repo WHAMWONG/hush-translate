@@ -1,6 +1,10 @@
 import { LaunchProps } from "@raycast/api";
-import getBase from "./base";
+import { Translator } from "./translator";
 
-export default function Command(props: LaunchProps) {
-  return getBase(props, "translate");
+type Context = { text?: string; image?: string };
+
+export default function Command(props: LaunchProps<{ launchContext: Context }>) {
+  const { text, image } = props.launchContext ?? {};
+  if (image) return <Translator source="screenshot" image={image} />;
+  return <Translator source="input" text={text ?? props.fallbackText} />;
 }

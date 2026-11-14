@@ -1,4 +1,15 @@
-# OpenAI Translator Changelog
+# Hush Translate Changelog
+
+## [Hush Translate] - 2026-11-14
+
+- Renamed to Hush Translate.
+- Translation now runs on the Mac with Apple Intelligence. Groq, OpenAI, Gemini, custom providers, API keys and the proxy settings are gone.
+- Commands are now Translate, Translate Clipboard, Translate Selection and Translate Screenshot. Polishing, Summarize, What Is It? and Setup Providers were removed.
+- Translate Clipboard reads an image on the clipboard with OCR.
+- OCR detects the language on its own and joins wrapped lines back into paragraphs.
+- The source language is always detected; text already in the target language is translated into the fallback language.
+- Languages are limited to the 16 that Apple Intelligence supports.
+- Fixed screenshot OCR, which opened a different extension instead of this one.
 
 ## [Update Raycast AI Model] - 2025-11-27
 

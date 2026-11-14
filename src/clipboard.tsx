@@ -1,18 +1,5 @@
-import { getPreferenceValues, launchCommand, LaunchProps, LaunchType } from "@raycast/api";
-import { TranslateMode } from "./providers/types";
+import { Translator } from "./translator";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-export default async function Command(props: LaunchProps) {
-  const { mode } = getPreferenceValues<{ mode: TranslateMode }>();
-
-  await launchCommand({
-    name: mode,
-    type: LaunchType.UserInitiated,
-    context: {
-      mode,
-      autoStart: true,
-      loadSelected: false,
-      loadClipboard: true,
-    },
-  });
+export default function Command() {
+  return <Translator source="clipboard" />;
 }

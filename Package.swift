@@ -1,25 +1,12 @@
-// swift-tools-version: 5.6
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
-  name: "raycast-openai-translator-tool",
+  name: "hush-translate",
   platforms: [
-    .macOS(.v10_15),
-],
+    .macOS(.v26)
+  ],
   targets: [
-    .executableTarget(
-      name: "ocr",
-      dependencies: [],
-      sources: [
-        "main.swift",
-      ]
-    ),
-    .executableTarget(
-      name: "lang",
-      dependencies: [],
-      sources: [
-        "main.swift",
-      ]
-    ),
+    .executableTarget(name: "translator")
   ]
 )
