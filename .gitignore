@@ -13,3 +13,6 @@
 raycast-env.d.ts
 # compiled from swift/ by ray build / ray develop
 /assets/compiled_raycast_swift
+
+# local tool state
+.impeccable/
