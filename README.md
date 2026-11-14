@@ -1,4 +1,8 @@
-# Hush Translate
+<p align="center">
+  <img src="assets/extension_icon.png" width="128" height="128" alt="Hush Translate icon: a smiling speech bubble made of glass on a sky-blue tile">
+</p>
+
+<h1 align="center">Hush Translate</h1>
 
 A [Raycast](https://www.raycast.com/) extension that translates with the Apple Intelligence model on your Mac. There is no account and no API key, it works offline, and the text you translate never leaves the device.
 
